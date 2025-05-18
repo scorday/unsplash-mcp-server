@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strconv"
 
 	"github.com/douglarek/unsplash-mcp-server/internal/api"
 	"github.com/douglarek/unsplash-mcp-server/internal/config"
+	"github.com/douglarek/unsplash-mcp-server/internal/models"
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
@@ -44,19 +46,18 @@ func NewSearchPhotosTool() mcp.Tool {
 }
 
 // HandleSearchPhotos returns a handler function for search photos requests
-func HandleSearchPhotos(cfg *config.Config) func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func HandleSearchPhotos(cfg *config.Config) func(context.Context, mcp.CallToolRequest, models.SearchPhotosRequest) (*mcp.CallToolResult, error) {
+	return func(ctx context.Context, request mcp.CallToolRequest, args models.SearchPhotosRequest) (*mcp.CallToolResult, error) {
 		// Create Unsplash client
 		client := api.NewClient(cfg)
 
 		// Extract and validate parameters
-		query, ok := request.Params.Arguments["query"].(string)
-		if !ok || query == "" {
+		if args.Query == "" {
 			return mcp.NewToolResultError("Search keyword must be provided"), nil
 		}
 
 		// Build query parameters
-		params := buildSearchParams(request.Params.Arguments)
+		params := buildSearchParams(args)
 
 		// Search photos
 		photos, err := client.SearchPhotos(ctx, params)
@@ -71,22 +72,22 @@ func HandleSearchPhotos(cfg *config.Config) func(context.Context, mcp.CallToolRe
 }
 
 // buildSearchParams builds URL parameters from request arguments
-func buildSearchParams(args map[string]interface{}) url.Values {
+func buildSearchParams(args models.SearchPhotosRequest) url.Values {
 	params := url.Values{}
 
 	// Required parameters
-	params.Add("query", args["query"].(string))
-	params.Add("page", fmt.Sprintf("%d", int(args["page"].(float64))))
-	params.Add("per_page", fmt.Sprintf("%d", int(args["per_page"].(float64))))
-	params.Add("order_by", args["order_by"].(string))
+	params.Add("query", args.Query)
+	params.Add("page", strconv.Itoa(args.Page))
+	params.Add("per_page", strconv.Itoa(args.PerPage))
+	params.Add("order_by", args.OrderBy)
 
 	// Optional parameters
-	if color, ok := args["color"]; ok && color != nil {
-		params.Add("color", color.(string))
+	if args.Color != "" {
+		params.Add("color", args.Color)
 	}
 
-	if orientation, ok := args["orientation"]; ok && orientation != nil {
-		params.Add("orientation", orientation.(string))
+	if args.Orientation != "" {
+		params.Add("orientation", args.Orientation)
 	}
 
 	return params

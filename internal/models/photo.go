@@ -1,5 +1,14 @@
 package models
 
+type SearchPhotosRequest struct {
+	Query       string `json:"query"`
+	Page        int    `json:"page"`
+	PerPage     int    `json:"per_page"`
+	OrderBy     string `json:"order_by"`
+	Color       string `json:"color"`
+	Orientation string `json:"orientation"`
+}
+
 // SearchResponse represents the Unsplash search API response
 type SearchResponse struct {
 	Total      int     `json:"total"`
